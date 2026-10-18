@@ -1,4 +1,11 @@
 const { Client, GatewayIntentBits } = require('discord.js');
+const http = require('http');
+
+// Cria a porta HTTP que o Render EXIGE para aceitar o Web Service gratuito
+http.createServer((req, res) => {
+    res.write("York Bot esta online!");
+    res.end();
+}).listen(process.env.PORT || 8080);
 
 const client = new Client({
     intents: [
