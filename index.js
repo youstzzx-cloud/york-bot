@@ -1,7 +1,9 @@
 const { Client, GatewayIntentBits } = require('discord.js');
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 
-// Cria a porta HTTP que o Render EXIGE para aceitar o Web Service gratuito
+// Servidor Web para manter o Render e UptimeRobot ativos 24/7
 http.createServer((req, res) => {
     res.write("York Bot esta online!");
     res.end();
@@ -14,52 +16,18 @@ const client = new Client({
     ]
 });
 
-// Configurações do York
-const CARGO_ID = '1561069559371272374';
-const NOME_IGNORADO = 'youstzzx.dc';
-
-client.once('ready', async () => {
-    console.log(`[YORK] Bot online com sucesso como ${client.user.tag}!`);
-
-    // Dá o cargo para quem JÁ ESTÁ no servidor
-    try {
-        console.log('[YORK] Verificando membros já existentes no servidor...');
-        
-        for (const guild of client.guilds.cache.values()) {
-            const members = await guild.members.fetch();
-            
-            members.forEach(async (member) => {
-                if (member.user.bot) return;
-                if (member.user.username.toLowerCase() === NOME_IGNORADO.toLowerCase()) return;
-
-                if (!member.roles.cache.has(CARGO_ID)) {
-                    try {
-                        await member.roles.add(CARGO_ID);
-                        console.log(`[YORK] Cargo antigo atribuído para: ${member.user.tag}`);
-                    } catch (err) {
-                        console.error(`[YORK] Erro ao dar cargo para ${member.user.tag}:`, err);
-                    }
-                }
-            });
+client.once('ready', () => {
+    console.log(`[YORK] Bot ligado com sucesso como ${client.user.tag}!`);
+    
+    // Carrega automaticamente todos os arquivos .js que estiverem na pasta "sistemas"
+    const pastasistemas = path.join(__dirname, 'sistemas');
+    if (fs.existsSync(pastasistemas)) {
+        const arquivos = fs.readdirSync(pastasistemas).filter(file => file.endsWith('.js'));
+        for (const arquivo of arquivos) {
+            const sistema = require(`./sistemas/${arquivo}`);
+            sistema(client);
+            console.log(`[YORK] Sistema carregado com sucesso: ${arquivo}`);
         }
-    } catch (error) {
-        console.error('[YORK] Erro ao buscar membros antigos:', error);
-    }
-});
-
-// Dá o cargo para quem ENTRAR NOVO no servidor
-client.on('guildMemberAdd', async (member) => {
-    try {
-        if (member.user.bot) return;
-        if (member.user.username.toLowerCase() === NOME_IGNORADO.toLowerCase()) {
-            console.log(`[YORK] Ignorando o usuário restrito: ${member.user.tag}`);
-            return;
-        }
-
-        await member.roles.add(CARGO_ID);
-        console.log(`[YORK] Cargo novo atribuído com sucesso para ${member.user.tag}`);
-    } catch (error) {
-        console.error('[YORK] Erro ao tentar dar o cargo:', error);
     }
 });
 
